@@ -44,7 +44,8 @@ load_dotenv()
 st.set_page_config(
     page_title=UIConfiguration.PAGE_TITLE,
     page_icon=UIConfiguration.PAGE_ICON,
-    layout=UIConfiguration.PAGE_LAYOUT
+    layout=UIConfiguration.PAGE_LAYOUT,
+    initial_sidebar_state="expanded"
 )
 
 # Add custom CSS for improved UI
