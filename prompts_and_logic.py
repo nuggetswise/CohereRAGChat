@@ -43,7 +43,7 @@ class RAGConfiguration:
     @staticmethod
     def should_apply_reranking(results, client):
         """Determine if reranking should be applied."""
-        # Apply reranking if we have multiple results and Cohere client
+        # Apply reranking if we have multiple results and any AI client
         return len(results) > 1 and client is not None
     
     @staticmethod
@@ -66,6 +66,80 @@ class RAGConfiguration:
             low_relevance = True
         
         return reranked_results, rerank_scores, low_relevance
+    
+    @staticmethod
+    def openai_rerank_results(query, documents, openai_client, top_n=5, min_threshold=0.15):
+        """Rerank documents using OpenAI when Cohere is not available."""
+        try:
+            # Create a prompt for OpenAI to score document relevance
+            doc_texts = [doc.page_content if hasattr(doc, 'page_content') else str(doc) for doc in documents]
+            
+            # Prepare documents for scoring (limit text length to avoid token limits)
+            truncated_docs = [doc[:500] + "..." if len(doc) > 500 else doc for doc in doc_texts]
+            
+            # Create a scoring prompt
+            docs_for_prompt = ""
+            for i, doc in enumerate(truncated_docs):
+                docs_for_prompt += f"\n\nDocument {i+1}:\n{doc}"
+            
+            prompt = f"""Rate the relevance of each document to the query on a scale of 0.0 to 1.0.
+
+Query: {query}
+
+Documents:{docs_for_prompt}
+
+Provide your response as a JSON list of scores in order, like this:
+{{"scores": [0.8, 0.3, 0.9, 0.1, 0.7]}}
+
+Only return the JSON, no other text."""
+
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=200
+            )
+            
+            # Parse the response
+            import json
+            response_text = response.choices[0].message.content.strip()
+            
+            # Extract JSON from response
+            start = response_text.find('{')
+            end = response_text.rfind('}') + 1
+            if start != -1 and end != -1:
+                json_text = response_text[start:end]
+                scores_data = json.loads(json_text)
+                scores = scores_data.get('scores', [])
+                
+                # Create scored results
+                scored_results = []
+                for i, (doc, score) in enumerate(zip(documents, scores)):
+                    if i < len(scores) and score >= min_threshold:
+                        # Add rerank score to document metadata
+                        if hasattr(doc, 'metadata'):
+                            doc.metadata["rerank_score"] = score
+                        scored_results.append({'document': doc, 'score': score})
+                
+                # Sort by score
+                scored_results.sort(key=lambda x: x['score'], reverse=True)
+                
+                # Extract top results
+                reranked_docs = [item['document'] for item in scored_results[:top_n]]
+                rerank_scores = [item['score'] for item in scored_results[:top_n]]
+                
+                # Check if best result is below threshold for low relevance detection
+                low_relevance = False
+                if reranked_docs and rerank_scores[0] < RAGConfiguration.RERANK_RELEVANCE_THRESHOLD:
+                    low_relevance = True
+                
+                return reranked_docs, rerank_scores, low_relevance
+            
+        except Exception as e:
+            print(f"[WARNING] OpenAI reranking failed: {e}")
+        
+        # Fallback to original order with placeholder scores
+        return documents[:top_n], [0.5] * min(top_n, len(documents)), True
     
     @staticmethod
     def get_web_search_config():
