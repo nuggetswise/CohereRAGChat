@@ -1,0 +1,155 @@
+job_title,job_level,location,base_salary_usd,bonus_usd,equity_value_usd,company_stage,offer_outcome,candidate_preference,notes
+Software Engineer,L4,San Francisco,115000,12000,45000,Series A,Accepted,Remote Work,Candidate strongly preferred flexible hours.
+Product Manager,L5,New York,140000,15000,30000,Public,Negotiated,Higher Base,Negotiated for a higher base salary.
+Data Scientist,L6,Toronto,135000,10000,25000,Series B,Rejected,More Equity,Declined due to low equity offer.
+UX Designer,L4,Seattle,95000,8000,20000,Seed,Accepted,Work-Life Balance,Very enthusiastic about design mission.
+DevOps Engineer,L5,Austin,125000,10000,15000,Series C,Accepted,Career Growth,Asked about promotion paths.
+Software Engineer,L6,Boston,170000,20000,40000,Public,Negotiated,Better Benefits,Requested enhanced health benefits.
+QA Engineer,L4,Vancouver,85000,5000,10000,Series A,Accepted,Remote Work,Prefers 100% remote.
+Data Engineer,Senior,San Francisco,190000,25000,60000,Series B,Accepted,More Equity,Equity was main motivator.
+Site Reliability Engineer,L5,Seattle,130000,12000,35000,Series D,Rejected,Higher Base,Chose competitor with higher salary.
+Product Designer,L6,New York,160000,15000,45000,Public,Accepted,Remote Work,Interested in hybrid schedule.
+Technical Program Manager,Senior,Austin,155000,15000,30000,Series C,Negotiated,Career Growth,Negotiated title change.
+Software Engineer,Staff,San Francisco,230000,30000,100000,Public,Accepted,More Equity,Equity grant was top priority.
+Data Scientist,L5,Boston,125000,10000,20000,Series B,Accepted,Better Benefits,Asked for wellness stipend.
+UX Designer,Senior,Vancouver,120000,10000,25000,Series A,Rejected,Remote Work,"Relocation required, declined."
+DevOps Engineer,L6,Toronto,145000,10000,30000,Seed,Accepted,Higher Base,Competitive base sealed the deal.
+Software Engineer,L5,Seattle,140000,15000,40000,Series D,Accepted,Career Growth,Impressed by leadership team.
+QA Engineer,L4,Austin,90000,8000,15000,Series C,Negotiated,Better Benefits,Negotiated health coverage upgrade.
+Data Engineer,Senior,New York,175000,20000,50000,Public,Accepted,Remote Work,Requested partial remote.
+Site Reliability Engineer,Staff,San Francisco,250000,35000,120000,Series B,Rejected,More Equity,Wanted larger option grant.
+Product Manager,L4,Boston,110000,10000,20000,Seed,Accepted,Career Growth,Strong alignment with roadmaps.
+Technical Program Manager,L5,Vancouver,130000,12000,30000,Series A,Accepted,Remote Work,Fully remote requested.
+Software Engineer,L6,Austin,155000,15000,50000,Series C,Accepted,Better Benefits,Healthcare package was key.
+Data Scientist,Staff,New York,220000,30000,80000,Public,Negotiated,More Equity,Worked for a higher grant.
+UX Designer,L5,Seattle,115000,10000,25000,Series B,Accepted,Work-Life Balance,Loved flexible PTO policy.
+DevOps Engineer,Senior,San Francisco,185000,20000,60000,Series D,Accepted,Career Growth,Interested in leadership roles.
+Software Engineer,L4,Toronto,95000,8000,20000,Seed,Rejected,Higher Base,Found better cash offer.
+Product Manager,Senior,Boston,165000,15000,45000,Public,Accepted,Remote Work,Prefers hybrid model.
+QA Engineer,L5,Austin,105000,9000,20000,Series C,Accepted,Better Benefits,Asked about dental coverage.
+Data Engineer,L6,Vancouver,135000,12000,35000,Series B,Accepted,More Equity,Equity was below market but acceptable.
+Site Reliability Engineer,L4,New York,125000,10000,30000,Series A,Accepted,Remote Work,Requested full remote.
+Technical Program Manager,Staff,San Francisco,240000,30000,90000,Public,Accepted,Career Growth,Excited by executive mentorship.
+Software Engineer,L5,Boston,130000,12000,40000,Series A,Negotiated,Higher Base,Negotiation centered on base salary.
+Product Designer,L4,Toronto,85000,8000,15000,Seed,Rejected,Remote Work,Chose local opportunity.
+DevOps Engineer,L5,Seattle,145000,15000,45000,Series D,Accepted,Better Benefits,Interested in retirement plan.
+Data Scientist,Senior,Austin,150000,15000,35000,Series B,Accepted,More Equity,Prioritized stake.
+UX Designer,Staff,San Francisco,225000,25000,85000,Public,Accepted,Remote Work,Hybrid schedule agreed.
+Software Engineer,L6,New York,175000,20000,60000,Series C,Accepted,Career Growth,Growth plan discussed.
+QA Engineer,L4,Vancouver,90000,7000,15000,Series A,Accepted,Work-Life Balance,Loved 4-day workweek pilot.
+Data Engineer,L5,Boston,140000,12000,50000,Public,Negotiated,More Equity,Asked for additional options.
+Site Reliability Engineer,Senior,Austin,160000,15000,40000,Series D,Accepted,Better Benefits,Better relocation support required.
+Product Manager,L5,San Francisco,150000,20000,60000,Series B,Accepted,Remote Work,Hybrid role agreed.
+Technical Program Manager,L4,Toronto,95000,8000,25000,Seed,Rejected,Higher Base,Salary below expectations.
+Software Engineer,Staff,Seattle,240000,30000,90000,Public,Accepted,More Equity,Pushed for larger grant.
+Data Scientist,L6,Boston,165000,18000,55000,Series C,Accepted,Career Growth,Excited by leadership track.
+UX Designer,Senior,Austin,125000,12000,30000,Series A,Accepted,Work-Life Balance,Focused on flexible PTO.
+DevOps Engineer,L4,New York,120000,10000,25000,Series B,Negotiated,Better Benefits,Enhanced health package negotiated.
+Software Engineer,L5,Vancouver,130000,12000,40000,Series D,Accepted,Remote Work,Fully remote was decided.
+Product Manager,Senior,San Francisco,175000,20000,70000,Public,Accepted,Career Growth,Strong mentorship programs.
+QA Engineer,L5,Austin,110000,10000,20000,Seed,Rejected,Higher Base,Salary too low compared to peers.
+Data Engineer,Senior,Seattle,170000,18000,60000,Series C,Accepted,More Equity,Equity was below expectations originally.
+Site Reliability Engineer,L6,Toronto,145000,12000,35000,Series B,Accepted,Better Benefits,Competitive healthcare was key.
+Technical Program Manager,Staff,Boston,210000,25000,75000,Public,Accepted,Remote Work,Hybrid schedule agreed.
+job_title,job_level,location,base_salary_usd,bonus_usd,equity_value_usd,company_stage,offer_outcome,candidate_preference,notes
+Software Engineer,L4,"San Francisco, CA",130000,15000,40000,Series A,Accepted,More Equity,Candidate was looking for higher equity stake.
+Product Manager,L5,"New York, NY",140000,20000,50000,Series B,Negotiated,Higher Base,Requested higher base after initial offer.
+Data Scientist,L4,"London, UK",115000,10000,30000,Public,Accepted,Remote Work,Candidate preferred remote-first positions.
+DevOps Engineer,L6,"Berlin, Germany",120000,12000,35000,Series A,Rejected,Higher Base,Offer declined due to lower base salary.
+UX Designer,Senior,"Bangalore, India",60000,8000,20000,Series B,Accepted,Remote Work,Strong portfolio; prioritized remote work.
+QA Engineer,L5,Singapore,90000,10000,25000,Seed,Negotiated,More Equity,Negotiated for increased equity.
+Engineering Manager,Staff,Dubai,160000,25000,80000,Series A,Accepted,Higher Base,Manager role; base was main focus.
+Data Engineer,L4,"Sydney, Australia",110000,9000,30000,Series B,Rejected,Remote Work,Candidate opted for fully remote role.
+Security Analyst,L5,"Mumbai, India",70000,7000,15000,Series A,Accepted,More Equity,Open to lower base for equity upside.
+Technical Program Manager,L6,"Toronto, Canada",130000,15000,45000,Public,Negotiated,Higher Base,Negotiated base and bonus.
+Software Engineer,L5,"San Francisco, CA",150000,20000,60000,Series B,Accepted,Remote Work,Preferred hybrid model.
+Product Manager,Senior,"New York, NY",155000,25000,70000,Public,Rejected,More Equity,Declined due to low equity.
+Data Scientist,L6,"London, UK",140000,15000,50000,Series A,Accepted,Higher Base,Prioritized guaranteed compensation.
+DevOps Engineer,L4,"Berlin, Germany",105000,8000,25000,Seed,Negotiated,Remote Work,Wanted flexibility to work remotely.
+UX Designer,L5,"Bangalore, India",65000,9000,22000,Series B,Accepted,More Equity,Equity growth potential was key.
+QA Engineer,Senior,Singapore,95000,11000,28000,Series A,Accepted,Higher Base,Benchmarked against industry peers.
+Engineering Manager,L6,Dubai,170000,30000,90000,Series B,Negotiated,More Equity,Moved equity tranche to earlier vesting.
+Data Engineer,L5,"Sydney, Australia",120000,10000,35000,Public,Accepted,Remote Work,Hybrid option accepted.
+Security Analyst,Senior,"Mumbai, India",75000,8000,18000,Series A,Rejected,Higher Base,Base salary was below expectations.
+Technical Program Manager,Staff,"Toronto, Canada",145000,18000,60000,Series B,Accepted,More Equity,Focused on long-term upside.
+Software Engineer,L6,"San Francisco, CA",170000,30000,100000,Public,Accepted,More Equity,Strong growth potential considered.
+Product Manager,L4,"New York, NY",120000,15000,35000,Series A,Rejected,Remote Work,Location flexibility was a deal-breaker.
+Data Scientist,Senior,"London, UK",150000,20000,80000,Series B,Negotiated,Higher Base,Countered with $10k base increase.
+DevOps Engineer,Senior,"Berlin, Germany",130000,16000,45000,Public,Accepted,Remote Work,Remote-first arrangement agreed.
+UX Designer,L4,"Bangalore, India",55000,7000,18000,Seed,Accepted,More Equity,Startup equity attractive.
+QA Engineer,L4,Singapore,85000,9000,24000,Series B,Negotiated,Higher Base,Requested small bump in base.
+Engineering Manager,Senior,Dubai,180000,35000,110000,Public,Accepted,Remote Work,Interested in flexible hours.
+Data Engineer,Senior,"Sydney, Australia",135000,12000,40000,Series A,Accepted,More Equity,Equity allocation increased after negotiation.
+Security Analyst,L6,"Mumbai, India",82000,9500,22000,Series B,Rejected,Higher Base,Better offer from competitor.
+Technical Program Manager,Senior,"Toronto, Canada",160000,22000,70000,Public,Accepted,Remote Work,Remote vs office balance discussed.
+Software Engineer,Staff,"San Francisco, CA",200000,50000,150000,Public,Accepted,More Equity,Staff level wanting max equity.
+Product Manager,L6,"New York, NY",165000,28000,90000,Series B,Negotiated,Higher Base,Countered base to meet expectation.
+Data Scientist,L5,"London, UK",130000,18000,55000,Series A,Accepted,Remote Work,Hybrid arrangement.
+DevOps Engineer,L5,"Berlin, Germany",115000,12000,30000,Series B,Accepted,More Equity,Open to more equity for long term.
+UX Designer,Senior,"Bangalore, India",70000,10000,25000,Public,Rejected,Remote Work,Preferred remote completely.
+QA Engineer,L6,Singapore,100000,13000,32000,Series A,Accepted,More Equity,Equity allocation was major pull.
+Engineering Manager,Staff,Dubai,190000,40000,130000,Series B,Accepted,Higher Base,Base compensation was priority.
+Data Engineer,L6,"Sydney, Australia",145000,15000,50000,Public,Negotiated,More Equity,Pushed for larger equity pool.
+Security Analyst,Senior,"Mumbai, India",78000,9000,20000,Seed,Accepted,Remote Work,Remote work was key.
+Technical Program Manager,L4,"Toronto, Canada",110000,13000,40000,Series A,Rejected,Higher Base,Salary below market.
+Software Engineer,L4,"San Francisco, CA",140000,18000,50000,Series A,Negotiated,More Equity,Counterproposal for equity.
+Product Manager,L5,"New York, NY",150000,23000,65000,Series B,Accepted,Remote Work,Hybrid setup accepted.
+Data Scientist,L4,"London, UK",120000,14000,45000,Series A,Rejected,More Equity,Equity was insufficient.
+DevOps Engineer,Senior,"Berlin, Germany",135000,17000,48000,Public,Accepted,Higher Base,Prioritized base salary.
+UX Designer,L5,"Bangalore, India",68000,9500,23000,Series B,Negotiated,Remote Work,Negotiated for remote option.
+QA Engineer,Senior,Singapore,97000,11500,29000,Public,Accepted,More Equity,Equity valued higher.
+Engineering Manager,L6,Dubai,175000,32000,95000,Series A,Rejected,Higher Base,Declined due to low base.
+Data Engineer,L5,"Sydney, Australia",125000,10500,38000,Series B,Accepted,More Equity,Accepted after equity revision.
+Security Analyst,L4,"Mumbai, India",73000,8500,17000,Public,Negotiated,Remote Work,Wanted flexible schedule.
+Technical Program Manager,Staff,"Toronto, Canada",170000,20000,80000,Series A,Accepted,More Equity,Interested in accelerated vesting.
+job_title,job_level,location,base_salary_usd,bonus_usd,equity_value_usd,company_stage,offer_outcome,candidate_preference,notes
+Software Engineer,Junior,Bangalore,70000,5000,80000,Seed,Negotiated,More Equity,Candidate requested increased equity percentage.
+Product Manager,Senior,San Francisco,150000,20000,120000,Series B,Accepted,Remote Work,Accepted after securing flexible remote schedule.
+Data Scientist,Staff,London,140000,15000,50000,Public,Accepted,Better Benefits,Focused on healthcare benefits.
+UX Designer,Junior,Berlin,60000,5000,30000,Series A,Rejected,Higher Base,Declined due to base salary below market.
+DevOps Engineer,Senior,New York,130000,18000,100000,Series B,Negotiated,Work-life Balance,Negotiated for a 4-day workweek.
+QA Engineer,Junior,Sydney,65000,7000,25000,Seed,Accepted,Remote Work,Requested remote work option.
+Engineering Manager,Staff,Toronto,160000,20000,80000,Series A,Accepted,More Equity,Interested in long-term equity vesting schedule.
+Solutions Architect,Senior,Dubai,120000,15000,60000,Series B,Rejected,Higher Base,Offer declined due to lower base compared to competitor.
+Sales Engineer,Senior,Singapore,115000,25000,40000,Public,Accepted,Better Benefits,Attracted by comprehensive benefits package.
+Marketing Manager,VP,San Francisco,200000,40000,150000,Public,Negotiated,More Equity,Pushed for higher equity grant.
+Software Engineer,Staff,New York,180000,20000,120000,Public,Accepted,Work-life Balance,Wanted additional vacation days.
+Data Scientist,Senior,Bangalore,100000,12000,50000,Series B,Accepted,Remote Work,Prefers hybrid remote setup.
+Product Manager,Junior,Mumbai,55000,5000,40000,Seed,Negotiated,Higher Base,Negotiated for 10% salary increase.
+UX Designer,Senior,London,90000,10000,30000,Series A,Accepted,Better Benefits,Healthcare benefits were the deciding factor.
+DevOps Engineer,Staff,San Francisco,170000,25000,100000,Public,Rejected,Remote Work,Declined due to on-site requirements.
+QA Engineer,Senior,Berlin,80000,8000,20000,Series A,Accepted,Work-life Balance,Accepted after securing flexible hours.
+Engineering Manager,VP,London,180000,30000,90000,Series B,Negotiated,More Equity,Requested improved vesting schedule.
+Solutions Architect,Staff,Dubai,140000,15000,70000,Series A,Accepted,Remote Work,Requested 3 days remote per week.
+Sales Engineer,Junior,Singapore,65000,10000,20000,Seed,Accepted,Better Benefits,Wanted a signing bonus.
+Marketing Manager,Senior,New York,130000,15000,60000,Series B,Accepted,Higher Base,Prioritized base salary over equity.
+Software Engineer,Senior,Berlin,110000,12000,50000,Series B,Rejected,Remote Work,Declined due to lack of remote option.
+Data Scientist,Staff,Toronto,150000,20000,80000,Public,Accepted,More Equity,Accepted after equity increase.
+Product Manager,VP,San Francisco,210000,50000,180000,Public,Accepted,Work-life Balance,Interested in sabbatical policy.
+UX Designer,Junior,Sydney,58000,5000,25000,Series A,Negotiated,Higher Base,Negotiated base increase by 5%.
+DevOps Engineer,Senior,Mumbai,95000,10000,45000,Series B,Accepted,Remote Work,Wanted remote flexibility.
+QA Engineer,Junior,Bangalore,60000,6000,30000,Seed,Rejected,Better Benefits,Declined due to lack of health coverage.
+Engineering Manager,Senior,New York,160000,25000,100000,Series B,Accepted,More Equity,Pushed for additional equity tranche.
+Solutions Architect,Senior,London,125000,15000,60000,Series A,Accepted,Work-life Balance,Secured flexible hours.
+Sales Engineer,Staff,Dubai,135000,30000,50000,Series B,Negotiated,Better Benefits,Negotiating for enhanced health plan.
+Marketing Manager,Junior,Singapore,60000,5000,20000,Seed,Accepted,Remote Work,Remote-first role was appealing.
+Software Engineer,VP,San Francisco,220000,40000,160000,Public,Accepted,More Equity,Focused on upside potential.
+Data Scientist,Junior,Berlin,70000,8000,30000,Series A,Accepted,Work-life Balance,Wanted compressed workweek.
+Product Manager,Staff,Toronto,140000,20000,70000,Series B,Rejected,Higher Base,Declined due to base below expectation.
+UX Designer,Senior,Sydney,95000,10000,40000,Series B,Accepted,Better Benefits,Benefits package was key.
+DevOps Engineer,Staff,Mumbai,110000,15000,50000,Series A,Negotiated,Remote Work,Seeking 50% remote schedule.
+QA Engineer,Senior,London,85000,9000,25000,Series B,Accepted,More Equity,Accepted after equity grant bump.
+Engineering Manager,Staff,Bangalore,145000,20000,80000,Series A,Rejected,Better Benefits,Declined due to no stock option plan.
+Solutions Architect,VP,New York,190000,35000,120000,Public,Accepted,Higher Base,Prioritized base salary.
+Sales Engineer,Junior,Toronto,65000,8000,25000,Seed,Accepted,Work-life Balance,Wanted 4-day week trial.
+Marketing Manager,Senior,Dubai,105000,12000,50000,Series B,Accepted,Remote Work,Requested hybrid schedule.
+Software Engineer,Senior,Singapore,125000,15000,60000,Series B,Negotiated,Better Benefits,Negotiated for parental leave.
+Data Scientist,VP,San Francisco,230000,50000,200000,Public,Accepted,More Equity,Pushed for additional stock options.
+Product Manager,Junior,Berlin,65000,7000,35000,Series A,Accepted,Remote Work,Remote-first role incentivized acceptance.
+UX Designer,Staff,New York,130000,15000,80000,Public,Rejected,Work-life Balance,Declined due to on-call requirements.
+DevOps Engineer,Junior,Toronto,70000,9000,30000,Series A,Accepted,Higher Base,Requested salary adjustment.
+QA Engineer,VP,London,170000,25000,90000,Public,Accepted,Better Benefits,Healthcare plan was improved.
+Engineering Manager,Senior,Dubai,135000,20000,70000,Series B,Negotiated,Remote Work,Negotiated for 3 days remote.
+Solutions Architect,Junior,Mumbai,60000,7000,25000,Seed,Accepted,Work-life Balance,Happy with flexible hours.
+Sales Engineer,Senior,Sydney,110000,20000,50000,Series A,Accepted,More Equity,Upsized equity grant.
+Marketing Manager,VP,London,205000,40000,170000,Public,Accepted,Remote Work,Opts for remote European schedule.
