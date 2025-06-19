@@ -9,7 +9,7 @@ class RAGConfiguration:
     # Embedding and retrieval settings
     EMBEDDING_MODEL = "embed-english-v3.0"
     RERANK_MODEL = "rerank-english-v3.0"
-    TOP_K_RESULTS = 5
+    TOP_K_RESULTS = 3
     CHUNK_SIZE = 1000
     CHUNK_OVERLAP = 200
     
@@ -18,7 +18,7 @@ class RAGConfiguration:
     RERANK_RELEVANCE_THRESHOLD = 0.70  # Threshold for good relevance
     
     # Web search settings
-    WEB_SEARCH_RESULTS = 3
+    WEB_SEARCH_RESULTS = 5
     WEB_SEARCH_THRESHOLD = 0.5
     
     # Generation settings
@@ -72,7 +72,7 @@ class RAGConfiguration:
         """Get web search configuration parameters."""
         return {
             "chunk_min_length": 50,
-            "max_results_to_process": 2000
+            "max_results_to_process": 1000
         }
     
     @staticmethod

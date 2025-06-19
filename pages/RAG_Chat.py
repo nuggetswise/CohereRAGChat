@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader, TextLoader, CSVLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_cohere import CohereEmbeddings
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import Chroma
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain.docstore.document import Document
 from typing import List, Dict, Any, Optional, Tuple
@@ -197,8 +197,8 @@ def load_compensation_database(cohere_key):
             cohere_api_key=cohere_key
         )
         
-        # Create FAISS vectorstore
-        vectorstore = FAISS.from_documents(docs, embeddings)
+        # Create Chroma vectorstore
+        vectorstore = Chroma.from_documents(docs, embeddings)
         
         return vectorstore, None
         
@@ -325,8 +325,8 @@ def process_uploaded_files(uploaded_files, cohere_key):
             cohere_api_key=cohere_key
         )
         
-        # Create FAISS vectorstore
-        vectorstore = FAISS.from_documents(split_docs, embeddings)
+        # Create Chroma vectorstore
+        vectorstore = Chroma.from_documents(split_docs, embeddings)
         
         return vectorstore, processing_details
     
