@@ -59,7 +59,8 @@ load_dotenv()
 st.set_page_config(
     page_title="Cohere Hybrid Chat",
     page_icon="🔮",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # Function to get API keys

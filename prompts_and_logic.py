@@ -215,7 +215,7 @@ class UIConfiguration:
     # Main UI elements
     MAIN_TITLE = "💬 RAG Chat with Cohere"
     MAIN_SUBTITLE = "Chat with your data using Cohere's powerful language models"
-    WELCOME_MESSAGE = "👋 Welcome to RAG Chat! I can help you find information in your data. Upload documents or ask questions about the compensation database."
+    WELCOME_MESSAGE = "👋 Hey! I can help make sense of your compensation data. Just upload a doc or ask a question to get started."
     CHAT_INPUT_PLACEHOLDER = "Ask a question about your data..."
     
     # Sidebar elements
