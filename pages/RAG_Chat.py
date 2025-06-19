@@ -1,6 +1,8 @@
 import streamlit as st
 import os
 import tempfile
+import pickle
+from pathlib import Path
 
 # Fix protobuf compatibility issues with ChromaDB
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
@@ -936,15 +938,14 @@ def main():
     if 'message_context' not in st.session_state:
         st.session_state.message_context = {}
     
-    # Automatically load the compensation database if not already loaded
+    # Use cached database loading for better performance
     if st.session_state.db_vectorstore is None:
-        with st.spinner("Loading internal database..."):
-            db_vectorstore, error = load_compensation_database(cohere_key)
-            if error:
-                st.error(f"❌ Error loading database: {error}")
-            else:
-                st.session_state.db_vectorstore = db_vectorstore
-                st.success("✅ Internal database loaded automatically!")
+        db_vectorstore, error = load_cached_compensation_database(cohere_key)
+        if error:
+            st.error(f"❌ Error loading database: {error}")
+        else:
+            st.session_state.db_vectorstore = db_vectorstore
+            st.success("✅ Internal database loaded!")
     
     # Add simple reference questions (no expander)
     if st.session_state.db_vectorstore is not None:
@@ -1046,6 +1047,15 @@ def main():
                 st.session_state.message_context = {}
             st.success("Chat history cleared!")
             st.rerun()
+    
+    # Add quick action buttons
+    add_quick_action_buttons()
+    
+    # Add search suggestions
+    add_search_suggestions()
+    
+    # Add advanced filters
+    add_advanced_filters()
     
     # Main chat interface (removed the "### 💬 Chat" header)
     
@@ -1282,5 +1292,76 @@ def main():
         # Process the query just like manual input
         st.rerun()
 
-if __name__ == "__main__":
-    main()
+def add_quick_action_buttons():
+    """Add quick action buttons for common queries"""
+    st.markdown("#### 🚀 Quick Actions")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        if st.button("💰 Salary Ranges", help="Get salary ranges by role and level"):
+            st.session_state.quick_query = "What are the salary ranges for different engineering levels?"
+    
+    with col2:
+        if st.button("📊 Market Analysis", help="Analyze compensation trends"):
+            st.session_state.quick_query = "Show me compensation trends across different locations"
+    
+    with col3:
+        if st.button("🏆 Top Paying", help="Find highest paying roles"):
+            st.session_state.quick_query = "Which roles and companies offer the highest total compensation?"
+    
+    with col4:
+        if st.button("📈 Equity Analysis", help="Analyze equity compensation"):
+            st.session_state.quick_query = "Compare equity compensation across different company stages"
+
+def add_search_suggestions():
+    """Add dynamic search suggestions based on available data"""
+    if st.session_state.db_vectorstore:
+        with st.expander("💡 Suggested Questions", expanded=False):
+            suggestions = [
+                "What's the average base salary for Senior Software Engineers?",
+                "Compare compensation between San Francisco and New York",
+                "Show me equity packages for L6+ engineers",
+                "What factors affect total compensation the most?",
+                "Which companies offer the best work-life balance?",
+                "How does compensation vary by company stage (startup vs big tech)?"
+            ]
+            
+            for suggestion in suggestions:
+                if st.button(f"💬 {suggestion}", key=f"suggest_{hash(suggestion)}"):
+                    st.session_state.quick_query = suggestion
+
+def add_advanced_filters():
+    """Add filters for more targeted searches"""
+    with st.sidebar.expander("🔍 Advanced Filters", expanded=False):
+        st.markdown("**Filter your searches:**")
+        
+        # Location filter
+        locations = st.multiselect(
+            "Locations",
+            ["San Francisco", "New York", "Seattle", "London", "Remote"],
+            help="Filter results by location"
+        )
+        
+        # Experience level filter
+        levels = st.multiselect(
+            "Experience Levels", 
+            ["Junior", "Mid", "Senior", "Staff", "Principal"],
+            help="Filter by career level"
+        )
+        
+        # Salary range filter
+        salary_range = st.slider(
+            "Base Salary Range (USD)",
+            0, 500000, (100000, 300000),
+            step=10000,
+            format="$%d",
+            help="Filter by salary range"
+        )
+        
+        # Store filters in session state
+        st.session_state.search_filters = {
+            "locations": locations,
+            "levels": levels,
+            "salary_range": salary_range
+        }
