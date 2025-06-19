@@ -131,7 +131,7 @@ def get_api_keys():
 
 def load_compensation_database(cohere_key):
     """Load the primary compensation database."""
-    # Get the absolute path to the current file (5_RAG_Chat.py)
+    # Get the absolute path to the current file (RAG_Chat.py)
     current_file = os.path.abspath(__file__)
     
     # Get the directory containing the current file (pages/)
@@ -141,7 +141,7 @@ def load_compensation_database(cohere_key):
     project_root = os.path.dirname(current_dir)
     
     # Construct the absolute path to the compensation data file
-    data_path = os.path.join(project_root, "data", "Compensation Data.csv")
+    data_path = os.path.join(project_root, "Data")
     
     print(f"[INFO] Looking for compensation database at: {data_path}")
     print(f"[INFO] File exists: {os.path.exists(data_path)}")
@@ -448,11 +448,11 @@ def search_multi_source(query, db_vectorstore, uploads_vectorstore, cohere_clien
                 top_score = reranked_results[0].metadata.get("rerank_score", 0)
                 show_search_analysis(
                     "Relevance Check", 
-                    f"Top result relevance ({top_score:.2f}) below threshold {RAGConfiguration.RERANK_RELEVANCE_THRESHOLD} - may trigger web fallback", 
+                    f"Top result relevance ({top_score:.2f}) below threshold {RAGConfiguration.RERANK_RELEVANCE_THRESHOLD} - will try web fallback", 
                     "warning"
                 )
             
-            show_search_analysis("Reranking", f"Reranked to {len(reranked_results)} relevant results (scores: {[f'{s:.2f}' for s in rerank_scores[:3]]})", "success")
+            show_search_analysis("Internal Reranking", f"Internal sources: {len(reranked_results)} relevant results (scores: {[f'{s:.2f}' for s in rerank_scores[:3]]})", "success" if len(reranked_results) > 0 else "warning")
             
             return reranked_results, search_details
             
@@ -460,6 +460,10 @@ def search_multi_source(query, db_vectorstore, uploads_vectorstore, cohere_clien
             show_search_analysis("Reranking", f"Reranking failed: {str(e)}, using similarity results", "warning")
     
     search_details["total_results"] = len(all_results)
+    # Show message for 0 internal results to clarify web fallback will be tried
+    if len(all_results) == 0:
+        show_search_analysis("Internal Search", "0 relevant results from internal sources - will try web search", "warning")
+    
     return all_results[:top_k], search_details
 
 def display_pipeline_progress(current_step):
@@ -521,13 +525,11 @@ def web_search_fallback(query, cohere_client):
             # Split web results for better processing
             web_chunks = [chunk.strip() for chunk in best_results.split('\n\n') if len(chunk.strip()) > RAGConfiguration.get_web_search_config()["chunk_min_length"]]
             
-            if len(web_chunks) > 1:
+            # Always try to rerank if we have any chunks (even just 1)
+            if len(web_chunks) >= 1:
                 try:
-                    # Show web embedding step
-                    show_search_analysis("Web Embedding", "🔮 Converting web chunks to embeddings using embed-english-v3.0...")
-                    
-                    # Rerank web results
-                    show_search_analysis("Web Reranking", "🎯 Reranking web chunks using Cohere...")
+                    # Show web reranking step even for single chunks
+                    show_search_analysis("Web Reranking", f"🎯 Reranking {len(web_chunks)} web chunks using Cohere...")
                     
                     # Update pipeline progress
                     search_details["current_step"] = "reranking"
@@ -549,18 +551,25 @@ def web_search_fallback(query, cohere_client):
                     
                     if relevant_chunks:
                         processed_results = "\n\n".join(relevant_chunks)
-                        show_search_analysis("Web Reranking", f"Selected {len(relevant_chunks)} relevant chunks (scores: {[f'{s:.2f}' for s in rerank_scores]})", "success")
+                        show_search_analysis("Web Reranking Results", f"✅ Selected {len(relevant_chunks)} relevant chunks (scores: {[f'{s:.2f}' for s in rerank_scores]})", "success")
                         show_search_analysis("Web Processing", "✅ Web RAG pipeline complete", "success")
                         return processed_results, ["🌐 DuckDuckGo + Cohere rerank"], True
+                    else:
+                        # All chunks below threshold, but show the scores anyway
+                        all_scores = [result.relevance_score for result in rerank_response.results]
+                        show_search_analysis("Web Reranking Results", f"⚠️ All chunks below threshold {RAGConfiguration.WEB_SEARCH_THRESHOLD} (scores: {[f'{s:.2f}' for s in all_scores]})", "warning")
+                        # Fall back to using best result anyway
+                        processed_results = web_chunks[rerank_response.results[0].index] if rerank_response.results else best_results
+                        return processed_results, ["🌐 DuckDuckGo web search"], True
                         
                 except Exception as e:
                     show_search_analysis("Web Reranking", f"Reranking failed: {str(e)}", "warning")
             
-            show_search_analysis("Web Search", f"Found web results for '{successful_query}'", "success")
+            show_search_analysis("Web Search", f"Found web results for '{successful_query}' (no reranking applied)", "success")
             return best_results[:RAGConfiguration.get_web_search_config()["max_results_to_process"]], ["🌐 DuckDuckGo web search"], True
         
         elif best_results:
-            show_search_analysis("Web Search", f"Found basic web results for '{successful_query}'", "success")
+            show_search_analysis("Web Search", f"Found basic web results for '{successful_query}' (no Cohere client)", "success")
             return best_results, ["🌐 DuckDuckGo web search"], True
         
         else:
@@ -878,8 +887,8 @@ def display_simple_evaluation_table(evaluation):
                 st.markdown(f"• {area}")
 
 def main():
-    st.title(UIConfiguration.MAIN_TITLE)
-    st.markdown(UIConfiguration.MAIN_SUBTITLE)
+    # Use the better welcome message from UIConfiguration at the top
+    st.markdown(f"### {UIConfiguration.WELCOME_MESSAGE}")
     
     # Get API keys
     cohere_key, openai_key = get_api_keys()
@@ -899,11 +908,7 @@ def main():
     # Initialize session state
     if 'rag_messages' not in st.session_state:
         st.session_state.rag_messages = []
-        # Add welcome message
-        st.session_state.rag_messages.append({
-            "role": "assistant",
-            "content": UIConfiguration.WELCOME_MESSAGE
-        })
+        # Remove the duplicate welcome message from chat - it's now at the top
     
     if 'db_vectorstore' not in st.session_state:
         st.session_state.db_vectorstore = None
@@ -925,8 +930,42 @@ def main():
                 st.session_state.db_vectorstore = db_vectorstore
                 st.success("✅ Internal database loaded automatically!")
     
+    # Add simple reference questions (no expander)
+    if st.session_state.db_vectorstore is not None:
+        st.markdown("**💡 Try asking:** *What's the average salary for L5 engineers?* • *Compare salaries between New York and London* • *Which roles offer the highest equity?*")
+    
     # Sidebar for file upload and settings
     with st.sidebar:
+        # Move Data Sources to the top
+        st.header(UIConfiguration.SIDEBAR_DATA_HEADER)
+        
+        # Show current data sources at the top
+        sources_status = []
+        if st.session_state.db_vectorstore:
+            sources_status.append("✅ Compensation Database")
+        else:
+            sources_status.append("❌ Compensation Database")
+            
+        if st.session_state.uploads_vectorstore:
+            sources_status.append(f"✅ Uploaded Documents ({len(uploaded_files) if uploaded_files else 0} files)")
+        else:
+            sources_status.append("❌ No uploaded documents")
+        
+        st.markdown("**Current Sources:**")
+        for status in sources_status:
+            st.markdown(f"• {status}")
+        
+        # Keep the manual load button for refreshing if needed
+        if st.button(UIConfiguration.RELOAD_DB_BUTTON):
+            with st.spinner("Reloading compensation database..."):
+                db_vectorstore, error = load_compensation_database(cohere_key)
+                if error:
+                    st.error(f"❌ Error loading database: {error}")
+                else:
+                    st.session_state.db_vectorstore = db_vectorstore
+                    st.success("✅ Compensation database reloaded!")
+        
+        st.markdown("---")
         st.header(UIConfiguration.SIDEBAR_UPLOAD_HEADER)
         
         # Create a styled upload area
@@ -971,35 +1010,6 @@ def main():
                 else:
                     st.error("❌ Failed to process uploaded files")
         
-        st.markdown("---")
-        st.header(UIConfiguration.SIDEBAR_DATA_HEADER)
-        
-        # Keep the manual load button for refreshing if needed
-        if st.button(UIConfiguration.RELOAD_DB_BUTTON):
-            with st.spinner("Reloading compensation database..."):
-                db_vectorstore, error = load_compensation_database(cohere_key)
-                if error:
-                    st.error(f"❌ Error loading database: {error}")
-                else:
-                    st.session_state.db_vectorstore = db_vectorstore
-                    st.success("✅ Compensation database reloaded!")
-        
-        # Show current data sources
-        sources_status = []
-        if st.session_state.db_vectorstore:
-            sources_status.append("✅ Compensation Database")
-        else:
-            sources_status.append("❌ Compensation Database")
-            
-        if st.session_state.uploads_vectorstore:
-            sources_status.append(f"✅ Uploaded Documents ({len(uploaded_files)} files)")
-        else:
-            sources_status.append("❌ No uploaded documents")
-        
-        st.markdown("**Current Sources:**")
-        for status in sources_status:
-            st.markdown(f"• {status}")
-        
         # Settings
         st.markdown("---")
         st.header(UIConfiguration.SIDEBAR_SETTINGS_HEADER)
@@ -1021,8 +1031,7 @@ def main():
             st.success("Chat history cleared!")
             st.rerun()
     
-    # Main chat interface
-    st.markdown("### 💬 Chat")
+    # Main chat interface (removed the "### 💬 Chat" header)
     
     # Display chat messages
     for i, message in enumerate(st.session_state.rag_messages):
@@ -1241,6 +1250,21 @@ def main():
                 
                 # Still show search analysis even for failed searches
                 display_search_analysis()
+    
+    # Handle sample query selection
+    elif 'sample_query' in st.session_state and st.session_state.sample_query:
+        query = st.session_state.sample_query
+        st.session_state.sample_query = None  # Clear the sample query
+        
+        # Clear previous search steps
+        if 'search_steps' in st.session_state:
+            st.session_state.search_steps = []
+        
+        # Add user message
+        st.session_state.rag_messages.append({"role": "user", "content": query})
+        
+        # Process the query just like manual input
+        st.rerun()
 
 if __name__ == "__main__":
     main()
