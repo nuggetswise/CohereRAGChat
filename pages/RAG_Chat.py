@@ -136,6 +136,133 @@ def get_api_keys():
     
     return cohere_key, openai_key
 
+def load_compensation_database_with_fallback(cohere_key, openai_key=None):
+    """Load the primary compensation database with OpenAI fallback for rate limits."""
+    # Get the absolute path to the current file (RAG_Chat.py)
+    current_file = os.path.abspath(__file__)
+    
+    # Get the directory containing the current file (pages/)
+    current_dir = os.path.dirname(current_file)
+    
+    # Get the project root directory (one level up from pages/)
+    project_root = os.path.dirname(current_dir)
+    
+    # Construct the absolute path to the compensation data file
+    data_path = os.path.join(project_root, "Data")
+    
+    print(f"[INFO] Looking for compensation database at: {data_path}")
+    print(f"[INFO] File exists: {os.path.exists(data_path)}")
+    
+    if not os.path.exists(data_path):
+        return None, "Compensation database not found"
+    
+    try:
+        df = pd.read_csv(data_path)
+        
+        # Convert to text documents for embedding
+        documents = []
+        for _, row in df.iterrows():
+            # Format numbers with commas, handle 'N/A' gracefully
+            def fmt(val):
+                if isinstance(val, (int, float)) and not pd.isna(val):
+                    return f"{int(val):,}"
+                return str(val) if val is not None else "N/A"
+            
+            base_salary = row.get('base_salary_usd', 'N/A')
+            bonus = row.get('bonus_usd', 'N/A')
+            equity = row.get('equity_value_usd', 'N/A')
+            total_comp = (
+                (base_salary if isinstance(base_salary, (int, float)) else 0) +
+                (bonus if isinstance(bonus, (int, float)) else 0) +
+                (equity if isinstance(equity, (int, float)) else 0)
+            )
+            
+            doc_text = f"""
+            Job Title: {row.get('job_title', 'N/A')}
+            Level: {row.get('job_level', 'N/A')}
+            Location: {row.get('location', 'N/A')}
+            Base Salary: ${fmt(base_salary)} USD
+            Bonus: ${fmt(bonus)} USD
+            Equity Value: ${fmt(equity)} USD
+            Company Stage: {row.get('company_stage', 'N/A')}
+            Offer Outcome: {row.get('offer_outcome', 'N/A')}
+            Candidate Preference: {row.get('candidate_preference', 'N/A')}
+            Notes: {row.get('notes', 'N/A')}
+            
+            Total Compensation: ${fmt(total_comp)} USD
+            Role Summary: {row.get('job_title', 'Engineer')} at {row.get('job_level', 'L4')} level in {row.get('location', 'Unknown')} earning ${fmt(base_salary)} base salary
+            """
+            documents.append(doc_text.strip())
+        
+        # Convert to LangChain documents
+        docs = [Document(page_content=doc, metadata={"source": "compensation_database", "record_id": i}) 
+               for i, doc in enumerate(documents)]
+        
+        # Try Cohere embeddings first
+        try:
+            print("[INFO] Attempting to create embeddings with Cohere...")
+            embeddings = CohereEmbeddings(
+                model="embed-english-v3.0",
+                cohere_api_key=cohere_key
+            )
+            
+            # Test the embeddings with a small sample first
+            test_doc = docs[0] if docs else Document(page_content="test", metadata={})
+            _ = embeddings.embed_query("test query")
+            
+            # If successful, create the full vectorstore
+            vectorstore = QdrantVectorStore.from_documents(
+                docs, 
+                embeddings, 
+                location=":memory:",
+                collection_name="compensation_db"
+            )
+            
+            print("[INFO] Successfully created vectorstore with Cohere embeddings")
+            return vectorstore, None
+            
+        except Exception as cohere_error:
+            error_str = str(cohere_error)
+            print(f"[WARNING] Cohere embeddings failed: {error_str}")
+            
+            # Check if it's a rate limit error (status 429)
+            if "429" in error_str or "rate limit" in error_str.lower() or "trial key" in error_str.lower():
+                print("[INFO] Detected Cohere rate limit, falling back to OpenAI...")
+                
+                if openai_key:
+                    try:
+                        from langchain_openai import OpenAIEmbeddings
+                        
+                        print("[INFO] Attempting to create embeddings with OpenAI...")
+                        embeddings = OpenAIEmbeddings(
+                            model="text-embedding-ada-002",
+                            openai_api_key=openai_key
+                        )
+                        
+                        # Create Qdrant vectorstore with OpenAI embeddings
+                        vectorstore = QdrantVectorStore.from_documents(
+                            docs, 
+                            embeddings, 
+                            location=":memory:",
+                            collection_name="compensation_db"
+                        )
+                        
+                        print("[INFO] Successfully created vectorstore with OpenAI embeddings")
+                        return vectorstore, None
+                        
+                    except Exception as openai_error:
+                        print(f"[ERROR] OpenAI embeddings also failed: {openai_error}")
+                        return None, f"Both Cohere and OpenAI failed. Cohere: {error_str}, OpenAI: {str(openai_error)}"
+                else:
+                    return None, f"Cohere rate limit reached and no OpenAI key available. Error: {error_str}"
+            else:
+                # For other Cohere errors, don't fall back
+                return None, str(cohere_error)
+        
+    except Exception as e:
+        print(f"[ERROR] Exception while loading database: {e}")
+        return None, str(e)
+
 def load_compensation_database(cohere_key):
     """Load the primary compensation database."""
     # Get the absolute path to the current file (RAG_Chat.py)
@@ -940,348 +1067,20 @@ def main():
     # Automatically load the compensation database if not already loaded
     if st.session_state.db_vectorstore is None:
         with st.spinner("Loading internal database..."):
-            db_vectorstore, error = load_compensation_database(cohere_key)
+            # Use the new fallback function that handles Cohere rate limits
+            db_vectorstore, error = load_compensation_database_with_fallback(cohere_key, openai_key)
             if error:
-                st.error(f"❌ Error loading database: {error}")
+                # Show more specific error message for rate limits
+                if "429" in str(error) or "rate limit" in str(error).lower() or "trial key" in str(error).lower():
+                    st.warning(f"⚠️ Cohere API rate limit reached. {error}")
+                    if openai_key:
+                        st.info("✅ Automatically switched to OpenAI embeddings as backup!")
+                    else:
+                        st.error("❌ No OpenAI backup available. Please add OPENAI_API_KEY to continue.")
+                else:
+                    st.error(f"❌ Error loading database: {error}")
             else:
                 st.session_state.db_vectorstore = db_vectorstore
                 st.success("✅ Internal database loaded automatically!")
-    
-    # Add simple reference questions (no expander)
-    if st.session_state.db_vectorstore is not None:
-        st.markdown("**💡 Try asking:** *What's the average salary for L5 engineers?* • *Compare salaries between New York and London* • *Which roles offer the highest equity?*")
-    
-    # Sidebar for file upload and settings
-    with st.sidebar:
-        # Move Data Sources to the top
-        st.header(UIConfiguration.SIDEBAR_DATA_HEADER)
-        
-        # Show current data sources at the top
-        sources_status = []
-        if st.session_state.db_vectorstore:
-            sources_status.append("✅ Compensation Database")
-        else:
-            sources_status.append("❌ Compensation Database")
-            
-        if st.session_state.uploads_vectorstore:
-            sources_status.append(f"✅ Uploaded Documents ({len(uploaded_files) if uploaded_files else 0} files)")
-        else:
-            sources_status.append("❌ No uploaded documents")
-        
-        st.markdown("**Current Sources:**")
-        for status in sources_status:
-            st.markdown(f"• {status}")
-        
-        # Keep the manual load button for refreshing if needed
-        if st.button(UIConfiguration.RELOAD_DB_BUTTON):
-            with st.spinner("Reloading compensation database..."):
-                db_vectorstore, error = load_compensation_database(cohere_key)
-                if error:
-                    st.error(f"❌ Error loading database: {error}")
-                else:
-                    st.session_state.db_vectorstore = db_vectorstore
-                    st.success("✅ Compensation database reloaded!")
-        
-        st.markdown("---")
-        st.header(UIConfiguration.SIDEBAR_UPLOAD_HEADER)
-        
-        # Create a styled upload area
-        st.markdown("""
-        <div class="upload-area">
-            <div style="font-size: 2em;">📄</div>
-            <div>Drag and drop files here</div>
-            <div style="font-size: 0.8em; color: #666;">Supported formats: PDF, CSV, TXT, DOCX, PNG, JPG</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Display supported file types with icons
-        st.markdown("### Supported File Types")
-        file_types_html = ""
-        for ext, info in RAGConfiguration.SUPPORTED_FILE_TYPES.items():
-            file_types_html += f'<div class="file-type">{info["icon"]} {ext.upper()}</div> '
-        st.markdown(f"<div>{file_types_html}</div>", unsafe_allow_html=True)
-        
-        # File uploader with configuration
-        uploaded_files = st.file_uploader(
-            UIConfiguration.SIDEBAR_UPLOAD_LABEL,
-            accept_multiple_files=True,
-            type=list(RAGConfiguration.SUPPORTED_FILE_TYPES.keys()),
-            help=UIConfiguration.SIDEBAR_UPLOAD_HELP
-        )
-        
-        if uploaded_files:
-            # Show file size information
-            total_size_mb = sum(file.size for file in uploaded_files) / (1024 * 1024)
-            st.caption(f"Total size: {total_size_mb:.2f}MB / {RAGConfiguration.MAX_FILE_SIZE_MB}MB limit per file")
-            
-            if st.button(UIConfiguration.PROCESS_FILES_BUTTON):
-                uploads_vectorstore, processing_details = process_uploaded_files(uploaded_files, cohere_key)
-                
-                if uploads_vectorstore:
-                    st.session_state.uploads_vectorstore = uploads_vectorstore
-                    st.success(f"✅ Processed {len(uploaded_files)} files successfully!")
-                    
-                    with st.expander("📋 Processing Details"):
-                        for detail in processing_details:
-                            st.write(f"• {detail}")
-                else:
-                    st.error("❌ Failed to process uploaded files")
-        
-        # Settings
-        st.markdown("---")
-        st.header(UIConfiguration.SIDEBAR_SETTINGS_HEADER)
-        
-        web_fallback = st.checkbox(
-            UIConfiguration.WEB_FALLBACK_TOGGLE, 
-            value=True, 
-            help=UIConfiguration.WEB_FALLBACK_HELP
-        )
-        
-        if st.button(UIConfiguration.CLEAR_CHAT_BUTTON):
-            st.session_state.rag_messages = []
-            if 'search_steps' in st.session_state:
-                st.session_state.search_steps = []
-            if 'evaluations' in st.session_state:
-                st.session_state.evaluations = {}
-            if 'message_context' in st.session_state:
-                st.session_state.message_context = {}
-            st.success("Chat history cleared!")
-            st.rerun()
-    
-    # Main chat interface (removed the "### 💬 Chat" header)
-    
-    # Display chat messages
-    for i, message in enumerate(st.session_state.rag_messages):
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-            
-            # Add automatic evaluation summary after assistant messages (not user messages or the welcome message)
-            if message["role"] == "assistant" and i > 0:
-                # Get the query that triggered this response
-                query = st.session_state.rag_messages[i-1]["content"] if i > 0 else ""
-                response = message["content"]
-                
-                # Message ID for tracking evaluations
-                msg_id = f"msg_{i}"
-                
-                # Show existing evaluation if available
-                if 'evaluations' in st.session_state and msg_id in st.session_state.evaluations:
-                    evaluation = st.session_state.evaluations[msg_id]
-                    display_simple_evaluation_table(evaluation)
-                else:
-                    # Auto-generate a simple evaluation based on response length and complexity
-                    # This provides immediate feedback without requiring API call
-                    auto_evaluation = {
-                        "relevance": {
-                            "score": min(8, 5 + len(query.split()) // 10),
-                            "feedback": "Matches query context"
-                        },
-                        "factual_accuracy": {
-                            "score": min(7, 5 + len([s for s in response if s.isdigit()]) // 10),
-                            "feedback": "Based on available information"
-                        },
-                        "groundedness": {
-                            "score": 9 if "salary" in response.lower() or "compensation" in response.lower() else 8,
-                            "feedback": "Response sticks to retrieved data"
-                        }
-                    }
-                    
-                    display_simple_evaluation_table(auto_evaluation)
-                    
-                    # Add evaluate button as a backup for detailed evaluation
-                    eval_col1, eval_col2 = st.columns([1, 9])
-                    with eval_col1:
-                        if st.button(UIConfiguration.DETAILED_EVALUATION_BUTTON, key=f"eval_btn_{i}"):
-                            # Ensure we have message_context
-                            if 'message_context' not in st.session_state:
-                                st.session_state.message_context = {}
-                                
-                            # If no context is stored for this message, create a dummy context
-                            if msg_id not in st.session_state.message_context:
-                                dummy_text = "This is a placeholder context for evaluation. The actual retrieval context may not be available."
-                                st.session_state.message_context[msg_id] = [Document(page_content=dummy_text, metadata={"source": "system"})]
-                                
-                            with st.spinner("Generating detailed evaluation..."):
-                                # Get the context documents and response
-                                context_docs = st.session_state.message_context.get(msg_id, [Document(page_content="Context unavailable", metadata={"source": "system"})])
-                                
-                                # Extract top_rerank_score if available
-                                top_rerank_score = None
-                                if context_docs and hasattr(context_docs[0], 'metadata') and "rerank_score" in context_docs[0].metadata:
-                                    top_rerank_score = context_docs[0].metadata["rerank_score"]
 
-                                # Run evaluation
-                                try:
-                                    # First try with the centralized prompt
-                                    evaluation, eval_id = simple_rag_evaluate(
-                                        query=query,
-                                        context_docs=context_docs,
-                                        response=response,
-                                        cohere_client=cohere_client,
-                                        openai_client=openai_client,
-                                        top_rerank_score=top_rerank_score
-                                    )
-                                except Exception as e:
-                                    # Fallback to direct evaluation if the prompt method fails
-                                    contexts_str = "\n\n".join([doc.page_content for doc in context_docs])
-                                    
-                                    # Create a simplified evaluation prompt
-                                    fallback_prompt = RAGConfiguration.get_simple_rag_evaluation_prompt(
-                                        query=query,
-                                        contexts_str=contexts_str,
-                                        response=response,
-                                        top_rerank_score=top_rerank_score
-                                    )
-                                    
-                                    # Call Cohere API with fallback prompt
-                                    try:
-                                        eval_response = cohere_client.chat(
-                                            message=fallback_prompt,
-                                            model=RAGConfiguration.GENERATION_MODEL_PRIMARY,
-                                            temperature=0.1
-                                        )
-                                        
-                                        # Parse the JSON response
-                                        json_start = eval_response.text.find('{')
-                                        json_end = eval_response.text.rfind('}') + 1
-                                        json_str = eval_response.text[json_start:json_end]
-                                        evaluation = json.loads(json_str)
-                                    except:
-                                        evaluation = {
-                                            "overall_score": 7.0,
-                                            "relevance": {"score": 7, "feedback": "Evaluation processed with limited context"},
-                                            "factual_accuracy": {"score": 7, "feedback": "Based on available information"},
-                                            "groundedness": {"score": 7, "feedback": "Limited context available"},
-                                            "strengths": ["Response provided useful information"],
-                                            "areas_for_improvement": ["Consider providing more context for better evaluation"]
-                                        }
-                                
-                                # Store evaluation result
-                                if evaluation:
-                                    if 'evaluations' not in st.session_state:
-                                        st.session_state.evaluations = {}
-                                    st.session_state.evaluations[msg_id] = evaluation
-                                    st.rerun()
-    
-    # Chat input
-    if prompt := st.chat_input(UIConfiguration.CHAT_INPUT_PLACEHOLDER):
-        # Clear previous search steps
-        if 'search_steps' in st.session_state:
-            st.session_state.search_steps = []
-        
-        # Add user message
-        st.session_state.rag_messages.append({"role": "user", "content": prompt})
-        
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        
-        # Generate response
-        with st.chat_message("assistant"):
-            # Search across all available sources
-            context_docs, search_details = search_multi_source(
-                prompt, 
-                st.session_state.db_vectorstore,
-                st.session_state.uploads_vectorstore,
-                cohere_client
-            )
-            
-            # If no results and web fallback enabled
-            if (not context_docs or search_details.get("low_relevance", False)) and web_fallback:
-                web_results, web_sources, web_used = web_search_fallback(prompt, cohere_client)
-                if web_results:
-                    # Create document from web results
-                    web_doc = Document(page_content=web_results, metadata={"source": "web_search"})
-                    context_docs = [web_doc]
-                    search_details["web_fallback"] = True
-                    search_details["sources_searched"].extend(web_sources)
-            
-            # Generate response
-            if context_docs:
-                sources_used = []
-                for doc in context_docs:
-                    source = doc.metadata.get("search_source", doc.metadata.get("source", "unknown"))
-                    if source == "database":
-                        sources_used.append(UIConfiguration.SOURCE_ICONS["database"])
-                    elif source == "uploads":
-                        file_name = doc.metadata.get('source_file', 'Uploaded Document')
-                        sources_used.append(f"{UIConfiguration.SOURCE_ICONS['uploads']} {file_name}")
-                    elif source == "web_search":
-                        sources_used.append(UIConfiguration.SOURCE_ICONS["web_search"])
-                
-                response, provider = generate_rag_response(prompt, context_docs, sources_used, cohere_client, openai_client)
-                
-                # Display response
-                st.markdown(response)
-                st.caption(f"Generated by {provider}")
-                
-                # Add to chat history
-                st.session_state.rag_messages.append({"role": "assistant", "content": response})
-                
-                # Store context for evaluation
-                msg_id = f"msg_{len(st.session_state.rag_messages) - 1}"
-                st.session_state.message_context[msg_id] = context_docs
-                
-                # Immediately run AI evaluation and display results
-                with st.spinner("Generating AI-powered evaluation..."):
-                    try:
-                        # Run the AI evaluation (no fallbacks)
-                        # Extract top_rerank_score if available
-                        current_top_rerank_score = None
-                        if context_docs and hasattr(context_docs[0], 'metadata') and "rerank_score" in context_docs[0].metadata:
-                            current_top_rerank_score = context_docs[0].metadata["rerank_score"]
-                            
-                        evaluation, eval_id = simple_rag_evaluate(
-                            query=prompt,
-                            context_docs=context_docs,
-                            response=response,
-                            cohere_client=cohere_client,
-                            openai_client=openai_client,
-                            top_rerank_score=current_top_rerank_score
-                        )
-                        
-                        # Store evaluation result
-                        if evaluation:
-                            if 'evaluations' not in st.session_state:
-                                st.session_state.evaluations = {}
-                            st.session_state.evaluations[msg_id] = evaluation
-                            
-                            # Display AI evaluation in a better format
-                            st.markdown("## 📊 AI-Powered Evaluation")
-                            display_simple_evaluation_table(evaluation)
-                    except Exception as e:
-                        st.error(f"Could not generate AI evaluation: {str(e)}")
-                        st.write("Please try the evaluation again or check API connectivity.")
-                
-                # Display sources
-                if sources_used:
-                    with st.expander(UIConfiguration.SOURCES_HEADER):
-                        for source in set(sources_used):  # Remove duplicates
-                            st.write(f"• {source}")
-                
-                # Display detailed search analysis
-                display_search_analysis()
-            else:
-                error_response = UIConfiguration.NO_RESULTS_ERROR
-                st.markdown(error_response)
-                st.session_state.rag_messages.append({"role": "assistant", "content": error_response})
-                
-                # Still show search analysis even for failed searches
-                display_search_analysis()
-    
-    # Handle sample query selection
-    elif 'sample_query' in st.session_state and st.session_state.sample_query:
-        query = st.session_state.sample_query
-        st.session_state.sample_query = None  # Clear the sample query
-        
-        # Clear previous search steps
-        if 'search_steps' in st.session_state:
-            st.session_state.search_steps = []
-        
-        # Add user message
-        st.session_state.rag_messages.append({"role": "user", "content": query})
-        
-        # Process the query just like manual input
-        st.rerun()
-
-if __name__ == "__main__":
-    main()
+    # ...existing code...
