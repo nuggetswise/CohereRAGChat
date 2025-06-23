@@ -942,27 +942,30 @@ try:
         
         # Get API keys
         cohere_key, openai_key, groq_key = get_api_keys()
-        
-        if not cohere_key:
-            st.error(UIConfiguration.NO_API_KEY_ERROR)
-            st.stop()
-        
-        # Create clients
-        cohere_client = cohere.Client(cohere_key)
-        os.environ["CHROMA_COHERE_API_KEY"] = cohere_key
-        
+        gemini_key = None
+        if hasattr(st, "secrets") and "gemini" in st.secrets and "GEMINI_API_KEY" in st.secrets.gemini:
+            gemini_key = st.secrets.gemini["GEMINI_API_KEY"]
+
+        # Main provider: OpenAI
         openai_client = None
         if openai_key:
             openai_client = OpenAI(api_key=openai_key)
-        
-        groq_client = None
-        if groq_key:
+
+        # Fallback: Gemini
+        gemini_client = None
+        if not openai_client and gemini_key:
             try:
-                from groq import Groq
-                groq_client = Groq(api_key=groq_key)
+                from google.generativeai import GenerativeModel
+                gemini_client = GenerativeModel(model_name="gemini-pro", api_key=gemini_key)
             except ImportError:
-                st.warning("Groq Python package not installed. Install with: pip install groq")
-        
+                st.warning("Google Generative AI SDK not installed. Install with: pip install google-generativeai")
+
+        # Fallback: Cohere
+        cohere_client = None
+        if not openai_client and not gemini_client and cohere_key:
+            cohere_client = cohere.Client(cohere_key)
+            os.environ["CHROMA_COHERE_API_KEY"] = cohere_key
+
         # Initialize session state
         if 'rag_messages' not in st.session_state:
             st.session_state.rag_messages = []
