@@ -2,6 +2,149 @@
 Centralized configuration and prompt templates for the RAG Chat application.
 This module provides consistent settings across the application.
 """
+import streamlit as st
+import time
+from datetime import datetime, timedelta
+import json
+import os
+
+class TokenLimitManager:
+    """Manages token usage limits and tracking for users."""
+    
+    def __init__(self, daily_limit=10000, monthly_limit=50000):
+        self.daily_limit = daily_limit
+        self.monthly_limit = monthly_limit
+        self.usage_file = ".streamlit/token_usage.json"
+        
+    def get_user_id(self):
+        """Get a simple user identifier (you can enhance this for multi-user scenarios)."""
+        # For now, use a simple session-based ID
+        if 'user_id' not in st.session_state:
+            st.session_state.user_id = f"user_{hash(str(time.time()))}"
+        return st.session_state.user_id
+    
+    def load_usage_data(self):
+        """Load token usage data from file."""
+        try:
+            if os.path.exists(self.usage_file):
+                with open(self.usage_file, 'r') as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return {}
+    
+    def save_usage_data(self, data):
+        """Save token usage data to file."""
+        try:
+            os.makedirs(os.path.dirname(self.usage_file), exist_ok=True)
+            with open(self.usage_file, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            st.warning(f"Could not save usage data: {e}")
+    
+    def get_current_usage(self, user_id):
+        """Get current token usage for a user."""
+        data = self.load_usage_data()
+        user_data = data.get(user_id, {})
+        
+        today = datetime.now().strftime("%Y-%m-%d")
+        current_month = datetime.now().strftime("%Y-%m")
+        
+        # Clean up old data (older than 32 days)
+        cutoff_date = (datetime.now() - timedelta(days=32)).strftime("%Y-%m-%d")
+        daily_usage = {k: v for k, v in user_data.get('daily', {}).items() if k >= cutoff_date}
+        
+        return {
+            'daily_today': daily_usage.get(today, 0),
+            'monthly_current': user_data.get('monthly', {}).get(current_month, 0),
+            'daily_usage': daily_usage,
+            'monthly_usage': user_data.get('monthly', {})
+        }
+    
+    def add_token_usage(self, user_id, tokens, operation_type="query"):
+        """Add token usage for a user."""
+        data = self.load_usage_data()
+        if user_id not in data:
+            data[user_id] = {'daily': {}, 'monthly': {}, 'operations': {}}
+        
+        today = datetime.now().strftime("%Y-%m-%d")
+        current_month = datetime.now().strftime("%Y-%m")
+        
+        # Update daily usage
+        data[user_id]['daily'][today] = data[user_id]['daily'].get(today, 0) + tokens
+        
+        # Update monthly usage
+        data[user_id]['monthly'][current_month] = data[user_id]['monthly'].get(current_month, 0) + tokens
+        
+        # Track operation types
+        data[user_id]['operations'][operation_type] = data[user_id]['operations'].get(operation_type, 0) + tokens
+        
+        self.save_usage_data(data)
+    
+    def check_limits(self, user_id, requested_tokens=0):
+        """Check if user is within token limits."""
+        usage = self.get_current_usage(user_id)
+        
+        daily_remaining = self.daily_limit - usage['daily_today']
+        monthly_remaining = self.monthly_limit - usage['monthly_current']
+        
+        can_proceed = (
+            usage['daily_today'] + requested_tokens <= self.daily_limit and
+            usage['monthly_current'] + requested_tokens <= self.monthly_limit
+        )
+        
+        return {
+            'can_proceed': can_proceed,
+            'daily_used': usage['daily_today'],
+            'daily_remaining': daily_remaining,
+            'monthly_used': usage['monthly_current'],
+            'monthly_remaining': monthly_remaining,
+            'daily_limit': self.daily_limit,
+            'monthly_limit': self.monthly_limit
+        }
+    
+    def estimate_tokens(self, text):
+        """Rough estimation of token count (4 chars ≈ 1 token)."""
+        return max(1, len(text) // 4)
+    
+    def display_usage_widget(self):
+        """Display a usage widget in the sidebar."""
+        user_id = self.get_user_id()
+        limits = self.check_limits(user_id)
+        
+        with st.sidebar:
+            st.markdown("---")
+            st.subheader("🎯 Token Usage")
+            
+            # Daily usage
+            daily_pct = (limits['daily_used'] / limits['daily_limit']) * 100
+            st.metric(
+                "Daily Usage", 
+                f"{limits['daily_used']:,} / {limits['daily_limit']:,}",
+                f"{limits['daily_remaining']:,} remaining"
+            )
+            st.progress(min(daily_pct / 100, 1.0))
+            
+            # Monthly usage
+            monthly_pct = (limits['monthly_used'] / limits['monthly_limit']) * 100
+            st.metric(
+                "Monthly Usage", 
+                f"{limits['monthly_used']:,} / {limits['monthly_limit']:,}",
+                f"{limits['monthly_remaining']:,} remaining"
+            )
+            st.progress(min(monthly_pct / 100, 1.0))
+            
+            # Warning if approaching limits
+            if daily_pct > 80 or monthly_pct > 80:
+                st.warning("⚠️ Approaching usage limits")
+            elif daily_pct > 95 or monthly_pct > 95:
+                st.error("🚨 Very close to limits!")
+
+# Global token manager instance
+token_manager = TokenLimitManager(
+    daily_limit=10000,    # 10K tokens per day
+    monthly_limit=100000  # 100K tokens per month
+)
 
 class RAGConfiguration:
     """Configuration for the RAG system including models, parameters, and thresholds."""
@@ -12,6 +155,11 @@ class RAGConfiguration:
     TOP_K_RESULTS = 3
     CHUNK_SIZE = 1000
     CHUNK_OVERLAP = 200
+    
+    # GPT4All embedding settings
+    GPT4ALL_EMBEDDING_MODEL = "all-MiniLM-L6-v2"  # Default embedding model
+    GPT4ALL_EMBEDDING_DIMENSIONS = 384
+    USE_LOCAL_EMBEDDINGS = False  # Set to True to use GPT4All instead of API calls
     
     # Reranking settings
     RERANK_MINIMUM_RELEVANCE_THRESHOLD = 0.15  # Minimum score to consider a result relevant
@@ -24,6 +172,12 @@ class RAGConfiguration:
     # Generation settings
     GENERATION_MODEL_PRIMARY = "command-r-plus"
     GENERATION_MODEL_OPENAI = "gpt-3.5-turbo"
+    
+    # Groq model settings
+    GENERATION_MODEL_GROQ_PRIMARY = "llama3-70b-8192"  # Llama 3 70B model
+    GENERATION_MODEL_GROQ_SECONDARY = "llama3-8b-8192"  # Llama 3 8B as backup
+    GENERATION_MODEL_GROQ_FAST = "mixtral-8x7b-32768"  # Mixtral for faster responses
+    
     GENERATION_TEMPERATURE = 0.3
     GENERATION_MAX_TOKENS = 800
     GENERATION_FALLBACK_MAX_TOKENS = 500
@@ -39,6 +193,11 @@ class RAGConfiguration:
         "jpeg": {"icon": "🖼️", "description": "JPEG Image"},
         "png": {"icon": "🖼️", "description": "PNG Image"}
     }
+    
+    # Token limiting settings
+    ENABLE_TOKEN_LIMITS = True
+    MAX_DAILY_TOKENS = 10000
+    MAX_MONTHLY_TOKENS = 100000
     
     @staticmethod
     def should_apply_reranking(results, client):

@@ -8,3 +8,6 @@ base = "light"
 [server]
 headless = true
 maxUploadSize = 200
+address = "localhost"
+enableCORS = false
+enableXsrfProtection = false
